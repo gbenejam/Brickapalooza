@@ -9,6 +9,8 @@ var bar;
 var bricks;
 var newBrick;
 var brickInfo;
+var score = 0;
+var scoreText;
 
 function preload() {
   //Defining canvas
@@ -45,7 +47,8 @@ function create() {
   bar.anchor.set(1, 1);
   bar.body.collideWorldBounds = true;
   bar.body.immovable = true;
-
+  scoreText = game.add.text(5, 5, 'Points: 0', { font: '18px Arial', fill: '#0095DD' });
+  //Adding bricks
   initBricks();
 }
 
@@ -58,6 +61,19 @@ function update() {
 
 function ballHitBrick(ball,brick) {
   brick.kill();
+  score += 10;
+  scoreText.setText('Points: ' + score);
+
+  var bricks_alive = 0;
+  for (i = 0; i < bricks.children.length; i++) {
+      if (bricks.children[i].alive == true) {
+        bricks_alive++;
+      }
+    }
+    if (bricks_alive == 0) {
+      alert('Congrats! You win');
+      location.reload();
+    }
 }
 
 function initBricks() {
