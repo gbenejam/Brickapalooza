@@ -6,9 +6,9 @@ var game = new Phaser.Game(480, 320, Phaser.AUTO, null, {
 
 var ball;
 var bar;
+var level;
 var bricks;
 var newBrick;
-var brickInfo;
 var score = 0;
 var scoreText;
 
@@ -18,17 +18,40 @@ function preload() {
   game.scale.pageAlignHorizontally = true;
   game.scale.pageAlignVertically = true;
   //Adding images
-  game.load.image('background', 'images/background.png');
   game.load.image('ball', 'images/ball.png');
+  game.load.image('powerup', 'images/ball.png');
   game.load.image('bar', 'images/bar.png');
   game.load.image('brick', 'images/brick.png');
+  //Loading level
+  game.load.text('level', 'levels/level.json');
 }
 
 function create() {
   game.physics.startSystem(Phaser.Physics.ARCADE);
   //Adding background
-  game.add.image(0, 0, 'background');
+  this.game.stage.backgroundColor = 0x4488cc;
+
   //Adding ball and its physics
+  addBall();
+
+  //Adding bar and its physics
+  addBar();
+
+  game.load.audio('song', ['audio/song.mp3']);
+
+  // *true* param enables looping
+  music = new Phaser.Sound(game,'song',1,true);
+
+  music.play();
+
+  scoreText = game.add.text(5, 5, 'Points: 0', { font: '18px Arial', fill: '#000000' });
+
+  this.levelData = JSON.parse(this.game.cache.getText('level'));
+  //Adding bricks
+  initBricks();
+}
+
+function addBall() {
   ball = game.add.sprite(game.world.width * 0.5, game.world.height - 25, 'ball');
   ball.anchor.set(0.5);
   game.physics.enable(ball, Phaser.Physics.ARCADE);
@@ -38,23 +61,21 @@ function create() {
   game.physics.arcade.checkCollision.down = false;
   ball.checkWorldBounds = true;
   ball.events.onOutOfBounds.add(function() {
-    alert('BAM! Try again.');
+    alert('Try again.');
     location.reload();
   }, this);
-  //Adding bar and its physics
+}
+
+function addBar() {
   bar = game.add.sprite(game.world.width * 0.5, game.world.height - 5, 'bar');
   game.physics.enable(bar, Phaser.Physics.ARCADE);
-  bar.anchor.set(1, 1);
-  bar.body.collideWorldBounds = true;
+  bar.anchor.set(0.5, 1);
   bar.body.immovable = true;
-  scoreText = game.add.text(5, 5, 'Points: 0', { font: '18px Arial', fill: '#0095DD' });
-  //Adding bricks
-  initBricks();
 }
 
 function update() {
   //Setting collisions
-  game.physics.arcade.collide(ball, bar);
+  game.physics.arcade.collide(ball, bar, ballHitPaddle);
   game.physics.arcade.collide(ball, bricks, ballHitBrick);
   bar.x = game.input.x || game.world.width * 0.5;
 }
@@ -77,19 +98,9 @@ function ballHitBrick(ball,brick) {
 }
 
 function initBricks() {
-    brickInfo = {
-        width: 50,
-        height: 20,
-        count: {
-            row: 7,
-            col: 3
-        },
-        offset: {
-            top: 50,
-            left: 60
-        },
-        padding: 10
-    }
+
+  var brickInfo = this.levelData.platformData;
+
     bricks = game.add.group();
     for(c=0; c<brickInfo.count.col; c++) {
         for(r=0; r<brickInfo.count.row; r++) {
@@ -102,4 +113,9 @@ function initBricks() {
             bricks.add(newBrick);
         }
     }
+}
+
+function ballHitPaddle(ball, paddle) {
+    ball.animations.play('wobble');
+    ball.body.velocity.x = -1*5*(paddle.x-ball.x);
 }
